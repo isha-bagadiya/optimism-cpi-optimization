@@ -2,20 +2,297 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* :root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+} */
+
+body {
+  color: white;
+  background: black;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% {
+    transform: rotate(1turn);
+  }
+}
+.button-50 {
+  appearance: button;
+  background-color: #000;
+  background-image: none;
+  border-radius: 9999px;
+  box-shadow: #fff 4px 4px 0 0, #000 4px 4px 0 1px;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  overflow: visible;
+  text-align: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.button-50[aria-label="Optimism"] {
+  background: #ff0420;
+  box-shadow: #ffffff 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+
+.button-50[aria-label="Aave"] {
+  background: linear-gradient(90deg, #2ebac6, #b6509e);
+  box-shadow: #ffffff 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+.button-50[aria-label="Compound"] {
+  background: black;
+  color: #00d395;
+  box-shadow: #00d395 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+.button-50[aria-label="Uniswap"] {
+  background: white;
+  color: #ff007a;
+  box-shadow: #ff007a 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+.button-50[aria-label="contact-us"] {
+  background: #ff8709;
+  box-shadow: #ffffff 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+.button-50[aria-label="add-your-dao"] {
+  background: white;
+  background-color: white;
+  color: #957bff;
+  height: max-content;
+  text-transform: capitalize;
+  padding: 10px 10px;
+  letter-spacing: normal;
+  display: flex;
+  box-shadow: #957bff 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+
+.button-50[aria-label="add-percentage"] {
+  background: white;
+  background-color: #957bff;
+  color: white;
+  height: max-content;
+  text-transform: capitalize;
+  padding: 10px 20px;
+  letter-spacing: normal;
+  display: flex;
+  box-shadow: white 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+.button-50[aria-label="simulate"] {
+  background: white;
+  background-color: #2fff6a;
+  color: black;
+  height: max-content;
+  text-transform: capitalize;
+  padding: 13px 60px;
+  letter-spacing: normal;
+  display: flex;
+  box-shadow: white 4px 4px 0 0, #000 4px 4px 0 1px;
+}
+
+.button-50:focus {
+  text-decoration: none;
+}
+
+.button-50:hover {
+  text-decoration: none;
+}
+
+.button-50:active {
+  box-shadow: rgba(0, 0, 0, 0.125) 0 3px 5px inset;
+  outline: 0;
+}
+
+.button-50:not([disabled]):active {
+  box-shadow: #fff 1px 1px 0 0, #000 1px 1px 0 1px;
+  transform: translate(2px, 2px);
+}
+
+.button-50.heroarrowbtn {
+  background: #ff4100;
+  height: max-content;
+  text-transform: capitalize;
+  padding: 10px 10px;
+  letter-spacing: normal;
+  display: flex;
+}
+.button-50.heroarrowbtn > img {
+  margin-left: 20px;
+}
+.paginationBtn {
+  border: 1px solid black;
+  padding: 5px;
+  margin: 0 0.3rem;
+  min-width: 2rem;
+  height: 2rem;
+  font-size: small;
+  line-height: 1.2;
+  display: inline-flex;
+  appearance: none;
+  -webkit-box-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  justify-content: center;
+  user-select: none;
+  position: relative;
+  white-space: nowrap;
+  vertical-align: middle;
+  outline: transparent solid 2px;
+  outline-offset: 2px;
+  line-height: 1.2;
+  border-radius: 9999px;
+  font-weight: 600;
+  padding-inline-start: 0.75rem;
+  padding-inline-end: 0.75rem;
+  border: 1px solid rgb(223, 227, 232);
+  background: #f9fafb;
+  color: #212529;
+}
+
+.paginationBtn.ellipsis {
+  border: none;
+  background: none;
+  margin: 0 0.1rem;
+}
+
+.paginationBtn.navigate {
+  padding: 0;
+}
+.paginationBtn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.paginationBtn.active {
+  background-color: #000000;
+  color: white;
+  border: 1px solid black;
+}
+
+/* Optimism.css */
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px auto;
+  font-size: 16px;
+}
+
+.modern-table thead th {
+  background-color: #f4f4f4;
+  color: #333;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+}
+
+.modern-table tbody tr {
+  border-bottom: 1px solid #ddd;
+}
+
+.modern-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 7px; /* width of the entire scrollbar */
+  height: 7px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f4f4f4;
+  border-radius: 20px;
+  overflow: hidden; /* color of the tracking area */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #ddd; /* color of the scroll thumb */
+  border-radius: 20px; /* roundness of the scroll thumb */
+  border: 0px solid #ddd; /* creates padding around scroll thumb */
+}
+
+@media (max-width: 768px) {
+  .paginationBtn {
+    padding: 3px;
+  }
+  .paginationBtn.active {
+    padding: 1px;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+body::-webkit-scrollbar {
+  width: 8px; /* width of the entire scrollbar */
+  height: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #0e100f;
+  border-radius: 20px;
+  overflow: hidden; /* color of the tracking area */
+}
+body::-webkit-scrollbar-thumb {
+  background-color: #ddd; /* color of the scroll thumb */
+  border-radius: 20px; /* roundness of the scroll thumb */
+  border: 0px solid #ddd; /* creates padding around scroll thumb */
+}
+
+.social-link.twitter:hover svg path,
+.social-link.twitter:hover,
+.social-link.twitter:hover svg {
+  fill: #b8f57f;
+  color: #b8f57f;
+  border-color: #b8f57f;
+  text-decoration: underline;
+}
+.social-link.telegram:hover svg path,
+.social-link.telegram:hover,
+.social-link.telegram:hover svg {
+  fill: #957bff;
+  color: #957bff;
+  border-color: #957bff;
+  text-decoration: underline;
+}
+.social-link.contact:hover svg path,
+.social-link.contact:hover svg,
+.social-link.contact:hover {
+  stroke: #ff8709;
+  color: #ff8709;
+  border-color: #ff8709;
+  text-decoration: underline;
+}
+
+.popup {
+  background: rgba(0, 0, 0, 0.562);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 0.5px solid #fec5fb;
+}
+
+.popup input::placeholder,
+.popup textarea::placeholder {
+  color: #ffffff3d;
+}
+.popup input,
+.popup textarea {
+  border: 1px solid #ffffff3d;
 }
