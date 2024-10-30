@@ -11,7 +11,9 @@ import {
   Legend,
   ChartOptions,
   ChartData,
+  TimeScale
 } from "chart.js";
+import "chartjs-adapter-date-fns";
 import annotationPlugin from "chartjs-plugin-annotation";
 
 ChartJS.register(
@@ -22,7 +24,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  annotationPlugin
+  annotationPlugin,
+  TimeScale
 );
 
 interface Event {
@@ -65,12 +68,12 @@ const CPILineGraph: React.FC<{
 }> = ({ cpiResults, initialCPI }) => {
   // Event data
   const events: Event[] = [
-    {
-      name: "RPGF Round 2",
-      startDate: "2022-01-06",
-      endDate: "2023-03-30",
-      color: "rgba(255,0,0,0.7)",
-    },
+    // {
+    //   name: "RPGF Round 2",
+    //   startDate: "2022-06-01",
+    //   endDate: "2023-03-30",
+    //   color: "rgba(255,0,0,0.7)",
+    // },
     {
       name: "RPGF Round 3",
       startDate: "2023-10-14",
@@ -83,28 +86,28 @@ const CPILineGraph: React.FC<{
       endDate: "2024-01-11",
       color: "rgba(255,0,0,0.7)",
     },
-    {
-      name: "Season 3",
-      startDate: "2023-01-26",
-      endDate: "2023-04-05",
-      color: "rgba(128,0,128,0.7)",
-    },
-    {
-      name: "Season 4",
-      startDate: "2023-06-08",
-      endDate: "2023-09-20",
-      color: "rgba(128,0,128,0.7)",
-    },
+    // {
+    //   name: "Season 3",
+    //   startDate: "2023-01-26",
+    //   endDate: "2023-04-05",
+    //   color: "rgba(128,0,128,0.7)",
+    // },
+    // {
+    //   name: "Season 4",
+    //   startDate: "2023-06-08",
+    //   endDate: "2023-09-20",
+    //   color: "rgba(128,0,128,0.7)",
+    // },
     {
       name: "Season 5",
       startDate: "2024-01-04",
-      endDate: "2024-12-31",
+      endDate: "0000-00-00",
       color: "rgba(128,0,128,0.7)",
     },
     {
       name: "Season 6",
       startDate: "2024-06-27",
-      endDate: "2024-12-31",
+      endDate: "0000-00-00",
       color: "rgba(128,0,128,0.7)",
     },
   ];
@@ -318,28 +321,35 @@ const CPILineGraph: React.FC<{
     },
     scales: {
       x: {
-        type: "category",
-        title: {
-          display: true,
-          text: "Date",
-          font: {
-            size: 14,
-            weight: "bold",
-          },
+        type: "time",
+        time: {
+          unit: "day",
+          tooltipFormat: "yyyy-MM-dd",
+          displayFormats: { day: "MMM yyyy" },
         },
-        ticks: {
-          autoSkip: true,
-          maxTicksLimit: 8,
-          maxRotation: 45,
-          minRotation: 45,
-          callback: function (value) {
-            return formatDisplayDate(value as string);
-          },
-        },
-        grid: {
-          display: true,
-          color: "rgba(0, 0, 0, 0.1)",
-        },
+        ticks: { autoSkip: true, maxTicksLimit: 10 },
+        // type: "category",
+        // title: {
+        //   display: true,
+        //   text: "Date",
+        //   font: {
+        //     size: 14,
+        //     weight: "bold",
+        //   },
+        // },
+        // ticks: {
+        //   autoSkip: true,
+        //   maxTicksLimit: 8,
+        //   maxRotation: 45,
+        //   minRotation: 45,
+        //   callback: function (value) {
+        //     return formatDisplayDate(value as string);
+        //   },
+        // },
+        // grid: {
+        //   display: true,
+        //   color: "rgba(0, 0, 0, 0.1)",
+        // },
       },
       y: {
         title: {

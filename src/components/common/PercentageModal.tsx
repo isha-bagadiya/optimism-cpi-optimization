@@ -351,7 +351,7 @@ const PercentageModal: React.FC = () => {
             {loading ? "Simulating..." : "Simulate"}
           </button>
 
-          <div className="absolute -right-[100px] top-[400px] md:top-[380px] h-[300px] w-[300px] overflow-hidden hidden sm:flex items-center justify-center">
+          <div className="absolute -right-[100px] top-[530px] md:top-[380px] h-[300px] w-[300px] overflow-hidden hidden sm:flex items-center justify-center">
             <Image src={sidebg} alt="sidebg" className="w-full h-auto"></Image>
           </div>
 
