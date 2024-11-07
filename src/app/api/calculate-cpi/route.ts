@@ -116,51 +116,98 @@ const councilMappings: CouncilMapping[] = [
 let cachedClient: any = null;
 let cachedDb: any = null;
 
+// function calculateCPI(
+//   data: any[],
+//   percentages: CouncilPercentages,
+//   redistributedPercentages: Record<string, number>,
+//   activeCouncils: Set<string>
+// ): number {
+
+//   // First, validate the input data
+//   if (!data || data.length === 0) {
+//     return 0;
+//   }
+
+//   return data.reduce((sum, delegate) => {
+
+//     const getCouncilValue = (councilKeys: string[]): number => {
+//       const activeKey = councilKeys.find(key => activeCouncils.has(key));
+//       if (!activeKey) return 0;
+
+//       const value = delegate.voting_power[activeKey];
+//       // Ensure we're working with numbers
+//       return typeof value === 'number'
+//         ? value
+//         : typeof value === 'string'
+//           ? parseFloat(value)
+//           : typeof value?.toString === 'function'
+//             ? parseFloat(value.toString())
+//             : 0;
+//     };
+
+//     // Get percentage values, ensuring they are numbers
+//     const percentageValues = {
+//       tokenHouse: (redistributedPercentages["Token House"] || 0) / 100,
+//       citizenHouse: (redistributedPercentages["Citizen House"] || 0) / 100,
+//       grantsCouncil: (redistributedPercentages["Grants Council"] || 0) / 100,
+//       grantsMM: (redistributedPercentages["Grants Council (Milestone & Metrics Sub-committee)"] || 0) / 100,
+//       securityCouncil: (redistributedPercentages["Security Council"] || 0) / 100,
+//       coc: (redistributedPercentages["Code of Conduct Council"] || 0) / 100,
+//       dab: (redistributedPercentages["Developer Advisory Board"] || 0) / 100
+//     };
+
+//     const influence =
+//       parseFloat(delegate.voting_power.th_vp?.toString() || "0") *
+//       percentageValues.tokenHouse +
+//       getCouncilValue(["ch_vp_r2", "ch_vp_r3", "ch_vp_r4"]) *
+//       percentageValues.citizenHouse +
+//       getCouncilValue(["gc_vp_s3", "gc_vp_s4", "gc_vp_s5", "gc_vp_s6"]) *
+//       percentageValues.grantsCouncil +
+//       getCouncilValue(["gc_vp_mm_s5", "gc_vp_mm_s6"]) *
+//       percentageValues.grantsMM +
+//       getCouncilValue(["sc_vp_s5", "sc_vp_s6"]) *
+//       percentageValues.securityCouncil+
+//       getCouncilValue(["coc_vp_s5", "coc_vp_s6"]) * percentageValues.coc+
+//       getCouncilValue(["dab_vp_s5", "dab_vp_s6"]) * percentageValues.dab;
+
+//     return sum + Math.pow(influence, 2);
+//   }, 0);
+// }
+
 function calculateCPI(
   data: any[],
   percentages: CouncilPercentages,
   redistributedPercentages: Record<string, number>,
   activeCouncils: Set<string>
 ): number {
-  return data.reduce((sum, delegate) => {
-    // console.log("inside calculate function");
-    const tokenHousePercentage = redistributedPercentages["Token House"] || 0;
-    const citizenHousePercentage =
-      redistributedPercentages["Citizen House"] || 0;
-    const grantsCouncilPercentage =
-      redistributedPercentages["Grants Council"] || 0;
-    const grantsMMPercentage =
-      redistributedPercentages[
-        "Grants Council (Milestone & Metrics Sub-committee)"
-      ] || 0;
-    const securityCouncilPercentage =
-      redistributedPercentages["Security Council"] || 0;
-    const cocPercentage =
-      redistributedPercentages["Code of Conduct Council"] || 0;
-    const dabPercentage =
-      redistributedPercentages["Developer Advisory Board"] || 0;
+  // First, validate the input data
+  if (!data || data.length === 0) {
+    return 0;
+  }
 
-    const getCouncilValue = (councilKeys: string[]): number => {
-      const activeKey = councilKeys.find((key) => activeCouncils.has(key));
-      return activeKey
-        ? parseFloat(delegate.voting_power[activeKey]?.toString() || "0")
-        : 0;
+  return data.reduce((sum, delegate) => {
+    const parseVotingPower = (value: any): number => {
+      if (typeof value === "undefined" || value === null) return 0;
+      // Convert to string first to handle both number and string inputs
+      const strValue = value.toString();
+      // Parse with high precision
+      return parseFloat(parseFloat(strValue).toFixed(10));
     };
 
-    const influence =
-      parseFloat(delegate.voting_power.th_vp?.toString() || "0") *
-        (tokenHousePercentage / 100) +
-      getCouncilValue(["ch_vp_r2", "ch_vp_r3", "ch_vp_r4"]) *
-        (citizenHousePercentage / 100) +
-      getCouncilValue(["gc_vp_s3", "gc_vp_s4", "gc_vp_s5", "gc_vp_s6"]) *
-        (grantsCouncilPercentage / 100) +
-      getCouncilValue(["gc_vp_mm_s5", "gc_vp_mm_s6"]) *
-        (grantsMMPercentage / 100) +
-      getCouncilValue(["sc_vp_s5", "sc_vp_s6"]) *
-        (securityCouncilPercentage / 100) +
-      getCouncilValue(["coc_vp_s5", "coc_vp_s6"]) * (cocPercentage / 100) +
-      getCouncilValue(["dab_vp_s5", "dab_vp_s6"]) * (dabPercentage / 100);
+    let influence = 0;
+    for (const council of activeCouncils) {
+      const votingPower =
+        delegate.voting_power && delegate.voting_power[council] !== undefined
+          ? parseVotingPower(delegate.voting_power[council])
+          : 0;
 
+      const percentage =
+        redistributedPercentages[
+          councilMappings.find((m) => m.keys.includes(council))?.displayName ||
+            ""
+        ];
+      influence += (votingPower * (percentage || 0)) / 100;
+    }
     return sum + Math.pow(influence, 2);
   }, 0);
 }
@@ -287,10 +334,80 @@ async function getDelegateDataForDate(db: any, date: Date) {
   return data;
 }
 
+// export async function POST(request: NextRequest) {
+//   try {
+//     const percentages = (await request.json()) as CouncilPercentages;
+//     const client = await connectDB();
+//     const db = client.db();
+
+//     const dates = await getUniqueDates(db);
+
+//     if (dates.length === 0) {
+//       console.error("No dates found in the collection");
+//       return NextResponse.json({ error: "No data available" }, { status: 404 });
+//     }
+
+//     const results = await Promise.all(
+//       dates.map(async (date) => {
+//         const activeCouncils = getActiveCouncils(new Date(date));
+//         const data = await getDelegateDataForDate(db, new Date(date));
+
+//         if (data.length === 0) {
+//           console.warn(`No data found for date: ${date}`);
+//           return null;
+//         }
+
+//         const councilPercentages = calculateCouncilPercentages(
+//           activeCouncils,
+//           percentages
+//         );
+//         const cpi = calculateCPI(
+//           data,
+//           percentages,
+//           councilPercentages.redistributed,
+//           activeCouncils
+//         );
+
+//         const activeRedistributed = Object.fromEntries(
+//           Object.entries(councilPercentages.redistributed).filter(([council]) =>
+//             councilMappings.some(
+//               (mapping) =>
+//                 mapping.keys.some((key) => activeCouncils.has(key)) &&
+//                 mapping.displayName === council
+//             )
+//           )
+//         );
+
+//         const dateString = new Date(date).toISOString().split("T")[0];
+
+//         return {
+//           date: dateString,
+//           cpi,
+//           activeCouncils: Array.from(activeCouncils),
+//           councilPercentages,
+//           activeRedistributed,
+//           filename: dateString,
+//         };
+//       })
+//     );
+
+//     const filteredResults = results.filter((result) => result !== null);
+
+//     return NextResponse.json({ results: filteredResults });
+//   } catch (error) {
+//     console.error("Error calculating CPI:", error);
+//     return NextResponse.json(
+//       { error: "Failed to calculate CPI" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function POST(request: NextRequest) {
+  let client;
   try {
     const percentages = (await request.json()) as CouncilPercentages;
-    const client = await connectDB();
+    client = await connectDB();
     const db = client.db();
 
     const dates = await getUniqueDates(db);
@@ -353,5 +470,14 @@ export async function POST(request: NextRequest) {
       { error: "Failed to calculate CPI" },
       { status: 500 }
     );
+  } finally {
+    if (client) {
+      try {
+        await client.close();
+        console.log("MongoDB connection closed successfully");
+      } catch (error) {
+        console.error("Error closing MongoDB connection:", error);
+      }
+    }
   }
 }

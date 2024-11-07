@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, memo, useContext } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -11,10 +11,14 @@ import {
   Legend,
   ChartOptions,
   ChartData,
-  TimeScale
+  TimeScale,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import annotationPlugin from "chartjs-plugin-annotation";
+
+import { BsTwitterX, BsShare, BsDownload } from "react-icons/bs";
+import html2canvas from "html2canvas";
+import { SavingContext } from "./SavingContext";
 
 ChartJS.register(
   CategoryScale,
@@ -62,18 +66,141 @@ type CPIResult = {
   activeRedistributed?: ActiveRedistributed;
 };
 
-const CPILineGraph: React.FC<{
+type CouncilPercentages = {
+  start_date: string;
+  end_date: string;
+  percentages: { [key: string]: number };
+};
+
+const HISTORICAL_PERCENTAGES: CouncilPercentages[] = [
+  {
+    start_date: "2023-01-26",
+    end_date: "2024-01-03",
+    percentages: {
+      "Token House": 41.95,
+      "Citizen House": 44.88,
+      "Grants Council": 13.17,
+    },
+  },
+  {
+    start_date: "2024-01-04",
+    end_date: "2024-12-11",
+    percentages: {
+      "Token House": 32.33,
+      "Citizen House": 34.59,
+      "Grants Council": 10.15,
+      "Grants Council (Milestone & Metrics Sub-committee)": 2.82,
+      "Security Council": 12.78,
+      "Code of Conduct Council": 4.32,
+      "Developer Advisory Board": 3.01,
+    },
+  },
+];
+
+type CPILineGraphProps = {
   cpiResults: CPIResult[];
   initialCPI: CPIResult[];
-}> = ({ cpiResults, initialCPI }) => {
+};
+
+const CPILineGraph: React.FC<CPILineGraphProps> = ({
+  cpiResults,
+  initialCPI,
+}) => {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<ChartJS | null>(null);
+  const { isSaving, setIsSaving } = useContext(SavingContext);
+
+  // Function to capture chart as image
+  const getChartImage = async (): Promise<string | null> => {
+    if (chartContainerRef.current) {
+      try {
+        const canvas = await html2canvas(chartContainerRef.current, {
+          backgroundColor: "white",
+          scale: 2, // Increase quality
+          logging: false,
+        });
+        return canvas.toDataURL("image/png");
+      } catch (error) {
+        console.error("Error capturing chart:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // Function to download image
+  const handleDownloadChart = async () => {
+    setIsSaving(true);
+
+    const imageData = await getChartImage();
+    if (imageData) {
+      const link = document.createElement("a");
+      link.download = "cpi-chart.png";
+      link.href = imageData;
+      link.click();
+    }
+    setIsSaving(false);
+  };
+
+  // Share functions
+  const handleShareToTwitter = async () => {
+    setIsSaving(true);
+
+    const imageData = await getChartImage();
+    if (imageData) {
+      // Convert base64 to blob
+      const response = await fetch(imageData);
+      const blob = await response.blob();
+
+      const file = new File([blob], "chart.png", { type: "image/png" });
+
+      // You would typically upload this to your server first and get a public URL
+      // For now, we'll share with text only
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          "Check out this CPI analysis chart!"
+        )}`,
+        "_blank"
+      );
+    }
+    setIsSaving(false);
+  };
+
+  const handleNativeShare = async () => {
+    setIsSaving(true);
+
+    try {
+      const imageData = await getChartImage();
+      if (!imageData) return;
+
+      // Convert base64 to blob
+      const response = await fetch(imageData);
+      const blob = await response.blob();
+      const file = new File([blob], "chart.png", { type: "image/png" });
+
+      const text = "Here's the latest CPI analysis chart with insights on recent council distributions!";
+
+
+      if (navigator.share) {
+        await navigator.share({
+          title: "CPI Analysis Chart",
+          text,
+          files: [file],
+        });
+      } else {
+        // Fallback to download
+        handleDownloadChart();
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      // Fallback to download
+      handleDownloadChart();
+    }
+    setIsSaving(false);
+  };
+
   // Event data
   const events: Event[] = [
-    // {
-    //   name: "RPGF Round 2",
-    //   startDate: "2022-06-01",
-    //   endDate: "2023-03-30",
-    //   color: "rgba(255,0,0,0.7)",
-    // },
     {
       name: "RPGF Round 3",
       startDate: "2023-10-14",
@@ -86,18 +213,6 @@ const CPILineGraph: React.FC<{
       endDate: "2024-01-11",
       color: "rgba(255,0,0,0.7)",
     },
-    // {
-    //   name: "Season 3",
-    //   startDate: "2023-01-26",
-    //   endDate: "2023-04-05",
-    //   color: "rgba(128,0,128,0.7)",
-    // },
-    // {
-    //   name: "Season 4",
-    //   startDate: "2023-06-08",
-    //   endDate: "2023-09-20",
-    //   color: "rgba(128,0,128,0.7)",
-    // },
     {
       name: "Season 5",
       startDate: "2024-01-04",
@@ -280,27 +395,33 @@ const CPILineGraph: React.FC<{
           },
           label: (context) => {
             const date = context.label;
-            let dataset;
-            if (context.datasetIndex === 0) {
-              dataset = initialCPI.find((r) => formatDate(r.filename) === date);
-            } else {
-              dataset = cpiResults.find((r) => formatDate(r.filename) === date);
-            }
+            const historicalData = initialCPI.find(
+              (r) => formatDate(r.filename) === date
+            );
+            const simulatedData = cpiResults.find(
+              (r) => formatDate(r.filename) === date
+            );
 
             const lines = [
               `${context.dataset.label}: ${context.parsed.y.toFixed(2)}`,
             ];
 
-            if (dataset?.activeRedistributed !== undefined) {
-              lines.push("Active Councils:");
-
-              Object.entries(dataset.activeRedistributed).forEach(
-                ([council, value]) => {
-                  if (value !== undefined) {
-                    lines.push(`  ${council}: ${value.toFixed(2)}`);
+            // Only process for the dataset that has data
+            if (context.parsed.y !== null) {
+              // For Simulated CPI percentages
+              if (
+                context.datasetIndex === 1 &&
+                simulatedData?.activeRedistributed
+              ) {
+                lines.push("Simulated Council Percentages:");
+                Object.entries(simulatedData.activeRedistributed).forEach(
+                  ([council, value]) => {
+                    if (value !== undefined) {
+                      lines.push(`  ${council}: ${value.toFixed(2)}%`);
+                    }
                   }
-                }
-              );
+                );
+              }
             }
 
             if (
@@ -310,13 +431,31 @@ const CPILineGraph: React.FC<{
               lines.push("");
             }
 
+            // For Historical CPI percentages
+            if (context.datasetIndex === 0 && historicalData) {
+              const currentDate = new Date(date);
+              const applicablePercentages = HISTORICAL_PERCENTAGES.find(
+                (period) =>
+                  new Date(period.start_date) <= currentDate &&
+                  new Date(period.end_date) >= currentDate
+              );
+
+              if (applicablePercentages) {
+                lines.push("Active Councils:");
+                Object.entries(applicablePercentages.percentages).forEach(
+                  ([council, percentage]) => {
+                    lines.push(`  ${council}: ${percentage.toFixed(2)}%`);
+                  }
+                );
+              }
+            }
             return lines;
           },
+
           labelTextColor: (context) => {
             return context.dataset.borderColor as string;
           },
         },
-        // displayColors: true,
       },
     },
     scales: {
@@ -328,28 +467,6 @@ const CPILineGraph: React.FC<{
           displayFormats: { day: "MMM yyyy" },
         },
         ticks: { autoSkip: true, maxTicksLimit: 10 },
-        // type: "category",
-        // title: {
-        //   display: true,
-        //   text: "Date",
-        //   font: {
-        //     size: 14,
-        //     weight: "bold",
-        //   },
-        // },
-        // ticks: {
-        //   autoSkip: true,
-        //   maxTicksLimit: 8,
-        //   maxRotation: 45,
-        //   minRotation: 45,
-        //   callback: function (value) {
-        //     return formatDisplayDate(value as string);
-        //   },
-        // },
-        // grid: {
-        //   display: true,
-        //   color: "rgba(0, 0, 0, 0.1)",
-        // },
       },
       y: {
         title: {
@@ -386,10 +503,44 @@ const CPILineGraph: React.FC<{
   };
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-lg h-[500px] p-6">
-      <Line data={data} options={options} />
+    <div className="w-full bg-white rounded-lg shadow-lg p-6">
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={handleDownloadChart}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Download Chart"
+        >
+          <BsDownload size={20} className="text-gray-700" />
+        </button>
+        <button
+          onClick={handleShareToTwitter}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Share on Twitter"
+        >
+          <BsTwitterX size={20} className="text-black" />
+        </button>
+        <button
+          onClick={handleNativeShare}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Share"
+        >
+          <BsShare size={20} className="text-gray-700" />
+        </button>
+      </div>
+
+      <div ref={chartContainerRef} className="h-[500px]">
+        <Line
+          data={data}
+          options={options}
+          ref={(ref) => {
+            if (ref) {
+              chartRef.current = ref;
+            }
+          }}
+        />
+      </div>
     </div>
   );
 };
 
-export default CPILineGraph;
+export default memo(CPILineGraph);

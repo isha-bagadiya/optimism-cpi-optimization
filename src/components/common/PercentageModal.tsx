@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import CPILineGraph from "./CpiLineGraph";
 import sidebg from "../../../public/influencepagesideimage.svg";
 import Image from "next/image";
 import { IoInformationCircleOutline } from "react-icons/io5";
+import { SavingContext } from './SavingContext'
 
 const councilInfo = {
   "Token House":
@@ -78,10 +79,12 @@ const PercentageModal: React.FC = () => {
   const [cpiResults, setCpiResults] = useState<CPIResult[]>([]);
   const [initialCPI, setInitialCPI] = useState<CPIResult[]>([]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);    
+  const { isSaving } = useContext(SavingContext);
 
+  
+  // Initialize the refs array
   useEffect(() => {
-    // Initialize the refs array
     inputRefs.current = councilFields.map(() => null);
     // Focus the first input on mount
     if (inputRefs.current[0]) {
@@ -90,7 +93,8 @@ const PercentageModal: React.FC = () => {
 
     const loadInitialCPI = async () => {
       try {
-        const response = await fetch("/daily_hhi_cpi_new.json");
+        // const response = await fetch("/daily_hhi_cpi_new.json");
+        const response = await fetch("/csvjson.json");
         const data: CPIData[] = await response.json();
         // Convert CPIData to CPIResult format
         const formattedData: CPIResult[] = data.map((item) => ({
@@ -193,11 +197,13 @@ const PercentageModal: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) {
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(null);
     setCpiResults([]);
-
     try {
       // Validate all percentages are numbers
       const invalidFields = Object.entries(councilPercentages).filter(
@@ -346,8 +352,8 @@ const PercentageModal: React.FC = () => {
             className={`button-50 max-w-max self-center px-10 py-1 font-redhat font-semibold ${
               isButtonDisabled ? "cursor-not-allowed opacity-50" : ""
             }`}
-            disabled={isButtonDisabled}
-          >
+            disabled={isButtonDisabled || isSaving}
+            >
             {loading ? "Simulating..." : "Simulate"}
           </button>
 
