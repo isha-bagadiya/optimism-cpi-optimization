@@ -102,6 +102,25 @@ type CPILineGraphProps = {
   initialCPI: CPIResult[];
 };
 
+interface TwitterMediaUploadResponse {
+  media_id_string: string;
+  media_id: number;
+  size: number;
+  expires_after_secs: number;
+  image: {
+    image_type: string;
+    w: number;
+    h: number;
+  };
+}
+
+interface TwitterConfig {
+  apiKey: string;
+  apiSecret: string;
+  accessToken: string;
+  accessTokenSecret: string;
+}
+
 const CPILineGraph: React.FC<CPILineGraphProps> = ({
   cpiResults,
   initialCPI,
@@ -142,28 +161,97 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
     setIsSaving(false);
   };
 
-  // Share functions
+  // Add this function to handle Twitter media upload
+  async function uploadTwitterMedia(
+    imageBlob: Blob,
+    config: TwitterConfig
+  ): Promise<string> {
+
+    try {
+      // Convert blob to base64
+      const base64Image = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(imageBlob);
+      });
+
+      console.log("imageeeeeeeeee", base64Image);
+
+
+      // Remove data:image/png;base64, prefix
+      const base64Data = base64Image.split(",")[1];
+      console.log(base64Data);
+      
+
+      // Make API call to your backend endpoint
+      const response = await fetch("/api/twitter/upload-media", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          media_data: base64Data,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload media to Twitter");
+      }
+
+      const data: TwitterMediaUploadResponse = await response.json();
+      return data.media_id_string;
+    } catch (error) {
+      console.error("Error uploading media to Twitter:", error);
+      throw error;
+    }
+  }
+
+  // Updated handleShareToTwitter function
   const handleShareToTwitter = async () => {
     setIsSaving(true);
 
-    const imageData = await getChartImage();
-    if (imageData) {
+    try {
+      const imageData = await getChartImage();
+      if (!imageData) {
+        throw new Error("Failed to generate chart image");
+      }
+
       // Convert base64 to blob
       const response = await fetch(imageData);
-      const blob = await response.blob();
+      const imageBlob = await response.blob();
+      
+      // Upload media to Twitter
+      const mediaId = await uploadTwitterMedia(imageBlob, {
+        apiKey: process.env.TWITTER_API_KEY!,
+        apiSecret: process.env.TWITTER_API_SECRET!,
+        accessToken: process.env.TWITTER_ACCESS_TOKEN!,
+        accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET!,
+      });
 
-      const file = new File([blob], "chart.png", { type: "image/png" });
+      // Create tweet with media
+      const tweetResponse = await fetch("/api/twitter/create-tweet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: "Check out this CPI analysis chart showing historical and simulated council distributions! #OptimismGovernance",
+          media: { media_ids: [mediaId] },
+        }),
+      });
 
-      // You would typically upload this to your server first and get a public URL
-      // For now, we'll share with text only
-      window.open(
-        `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          "Check out this CPI analysis chart!"
-        )}`,
-        "_blank"
-      );
+      if (!tweetResponse.ok) {
+        throw new Error("Failed to create tweet");
+      }
+
+      // Show success message
+      alert("Successfully shared to Twitter!");
+    } catch (error) {
+      console.error("Error sharing to Twitter:", error);
+      alert("Failed to share to Twitter. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const handleNativeShare = async () => {
@@ -178,8 +266,8 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
       const blob = await response.blob();
       const file = new File([blob], "chart.png", { type: "image/png" });
 
-      const text = "Here's the latest CPI analysis chart with insights on recent council distributions!";
-
+      const text =
+        "Here's the latest CPI analysis chart with insights on recent council distributions!";
 
       if (navigator.share) {
         await navigator.share({
