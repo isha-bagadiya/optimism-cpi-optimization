@@ -8,7 +8,7 @@ const Header = () => {
       <div className="px-4">
         <div className="flex justify-between items-center h-30 overflow-visible">
           <div className="flex-shrink-0 flex items-center">
-            <Link href="https://cpi-one.vercel.app/">
+            <Link href="https://www.daocpi.com/">
               <Image
                 src="/assets/images/CPI.svg"
                 alt="Logo"

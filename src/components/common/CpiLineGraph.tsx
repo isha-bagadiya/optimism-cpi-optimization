@@ -15,7 +15,7 @@ import {
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import annotationPlugin from "chartjs-plugin-annotation";
-
+import lighthouse from "@lighthouse-web3/sdk";
 import { BsTwitterX, BsShare, BsDownload } from "react-icons/bs";
 import html2canvas from "html2canvas";
 import { SavingContext } from "./SavingContext";
@@ -43,9 +43,11 @@ interface Annotation {
   [key: string]: any;
 }
 
-// Extend ChartData to include annotations
-interface CustomChartData extends ChartData<"line"> {
-  annotations?: Annotation;
+interface UploadResponse {
+  success: boolean;
+  imageUrl?: any;
+  error?: string;
+  status?: any; // Add specific types based on lighthouse response
 }
 
 type CouncilName =
@@ -72,6 +74,30 @@ type CouncilPercentages = {
   percentages: { [key: string]: number };
 };
 
+type CPILineGraphProps = {
+  cpiResults: CPIResult[];
+  initialCPI: CPIResult[];
+};
+
+interface TwitterMediaUploadResponse {
+  media_id_string: string;
+  media_id: number;
+  size: number;
+  expires_after_secs: number;
+  image: {
+    image_type: string;
+    w: number;
+    h: number;
+  };
+}
+
+interface TwitterConfig {
+  apiKey: string;
+  apiSecret: string;
+  accessToken: string;
+  accessTokenSecret: string;
+}
+
 const HISTORICAL_PERCENTAGES: CouncilPercentages[] = [
   {
     start_date: "2023-01-26",
@@ -97,37 +123,13 @@ const HISTORICAL_PERCENTAGES: CouncilPercentages[] = [
   },
 ];
 
-type CPILineGraphProps = {
-  cpiResults: CPIResult[];
-  initialCPI: CPIResult[];
-};
-
-interface TwitterMediaUploadResponse {
-  media_id_string: string;
-  media_id: number;
-  size: number;
-  expires_after_secs: number;
-  image: {
-    image_type: string;
-    w: number;
-    h: number;
-  };
-}
-
-interface TwitterConfig {
-  apiKey: string;
-  apiSecret: string;
-  accessToken: string;
-  accessTokenSecret: string;
-}
-
 const CPILineGraph: React.FC<CPILineGraphProps> = ({
   cpiResults,
   initialCPI,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ChartJS | null>(null);
-  const { isSaving, setIsSaving } = useContext(SavingContext);
+  const { setIsSaving } = useContext(SavingContext);
 
   // Function to capture chart as image
   const getChartImage = async (): Promise<string | null> => {
@@ -147,6 +149,80 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
     return null;
   };
 
+  const base64ToFile = (base64: string, filename: string): File => {
+    const parts = base64.split(";base64,");
+    const contentType = parts[0].split(":")[1];
+    const raw = window.atob(parts[1]);
+    const rawLength = raw.length;
+    const uInt8Array = new Uint8Array(rawLength);
+
+    for (let i = 0; i < rawLength; ++i) {
+      uInt8Array[i] = raw.charCodeAt(i);
+    }
+
+    const blob = new Blob([uInt8Array], { type: contentType });
+    return new File([blob], filename, { type: contentType });
+  };
+
+  // Function to upload chart image to Lighthouse
+  const uploadChartToLighthouse = async (): Promise<UploadResponse> => {
+    try {
+      // Get the chart image
+      const chartImage = await getChartImage();
+
+      if (!chartImage) {
+        throw new Error("Failed to capture chart image");
+      }
+
+      // Convert base64 to File
+      const imageFile = base64ToFile(chartImage, "chart.png");
+
+      // Upload using lighthouse.upload
+      const output = await lighthouse.upload(
+        [imageFile],
+        "67bf3ae8.c57ead6e6cb24c29b7ac6e846466fee4"
+      );
+      console.log("File Status:", output.data.Hash);
+      return {
+        success: true,
+        status: output,
+        imageUrl: output.data.Hash, // Adjust based on actual response structure
+      };
+    } catch (error) {
+      console.error("Error uploading to Lighthouse:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  };
+
+  // Updated handleShareToTwitter function
+  const handleShareToTwitter = async () => {
+    setIsSaving(true);
+
+    try {
+      const result = await uploadChartToLighthouse();
+
+      if (!result.success || !result.imageUrl) {
+        throw new Error("Failed to upload chart image to Lighthouse");
+      }
+  
+      const imageUrl = `https://files.lighthouse.storage/viewFile/${result.imageUrl}`;
+      const tweetText = encodeURIComponent('Check out this cpi calculation!')
+
+       const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(imageUrl)}`
+
+       window.open(twitterIntentUrl, '_blank')
+    } catch (error) {
+      console.error("Error sharing to Twitter:", error);
+      alert("Failed to share to Twitter. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Function to download image
   const handleDownloadChart = async () => {
     setIsSaving(true);
@@ -159,99 +235,6 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
       link.click();
     }
     setIsSaving(false);
-  };
-
-  // Add this function to handle Twitter media upload
-  async function uploadTwitterMedia(
-    imageBlob: Blob,
-    config: TwitterConfig
-  ): Promise<string> {
-
-    try {
-      // Convert blob to base64
-      const base64Image = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(imageBlob);
-      });
-
-      console.log("imageeeeeeeeee", base64Image);
-
-
-      // Remove data:image/png;base64, prefix
-      const base64Data = base64Image.split(",")[1];
-      console.log(base64Data);
-      
-
-      // Make API call to your backend endpoint
-      const response = await fetch("/api/twitter/upload-media", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          media_data: base64Data,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload media to Twitter");
-      }
-
-      const data: TwitterMediaUploadResponse = await response.json();
-      return data.media_id_string;
-    } catch (error) {
-      console.error("Error uploading media to Twitter:", error);
-      throw error;
-    }
-  }
-
-  // Updated handleShareToTwitter function
-  const handleShareToTwitter = async () => {
-    setIsSaving(true);
-
-    try {
-      const imageData = await getChartImage();
-      if (!imageData) {
-        throw new Error("Failed to generate chart image");
-      }
-
-      // Convert base64 to blob
-      const response = await fetch(imageData);
-      const imageBlob = await response.blob();
-      
-      // Upload media to Twitter
-      const mediaId = await uploadTwitterMedia(imageBlob, {
-        apiKey: process.env.TWITTER_API_KEY!,
-        apiSecret: process.env.TWITTER_API_SECRET!,
-        accessToken: process.env.TWITTER_ACCESS_TOKEN!,
-        accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET!,
-      });
-
-      // Create tweet with media
-      const tweetResponse = await fetch("/api/twitter/create-tweet", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: "Check out this CPI analysis chart showing historical and simulated council distributions! #OptimismGovernance",
-          media: { media_ids: [mediaId] },
-        }),
-      });
-
-      if (!tweetResponse.ok) {
-        throw new Error("Failed to create tweet");
-      }
-
-      // Show success message
-      alert("Successfully shared to Twitter!");
-    } catch (error) {
-      console.error("Error sharing to Twitter:", error);
-      alert("Failed to share to Twitter. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const handleNativeShare = async () => {

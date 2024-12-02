@@ -4,7 +4,7 @@ import CPILineGraph from "./CpiLineGraph";
 import sidebg from "../../../public/influencepagesideimage.svg";
 import Image from "next/image";
 import { IoInformationCircleOutline } from "react-icons/io5";
-import { SavingContext } from './SavingContext'
+import { SavingContext } from "./SavingContext";
 
 const councilInfo = {
   "Token House":
@@ -79,10 +79,11 @@ const PercentageModal: React.FC = () => {
   const [cpiResults, setCpiResults] = useState<CPIResult[]>([]);
   const [initialCPI, setInitialCPI] = useState<CPIResult[]>([]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);    
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const { isSaving } = useContext(SavingContext);
 
-  
+  const [loadingGraph, setLoadingGraph] = useState(false);
+
   // Initialize the refs array
   useEffect(() => {
     inputRefs.current = councilFields.map(() => null);
@@ -93,7 +94,6 @@ const PercentageModal: React.FC = () => {
 
     const loadInitialCPI = async () => {
       try {
-        // const response = await fetch("/daily_hhi_cpi_new.json");
         const response = await fetch("/csvjson.json");
         const data: CPIData[] = await response.json();
         // Convert CPIData to CPIResult format
@@ -200,6 +200,7 @@ const PercentageModal: React.FC = () => {
     if (isSaving) {
       return;
     }
+    setLoadingGraph(true);
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -237,7 +238,7 @@ const PercentageModal: React.FC = () => {
       }
 
       const storeData = await storeResponse.json();
-      console.log("Store response:", storeData);
+      // console.log("Store response:", storeData);
 
       // Calculate CPI
       const cpiResponse = await fetch("/api/calculate-cpi", {
@@ -252,13 +253,14 @@ const PercentageModal: React.FC = () => {
 
       const { results } = await cpiResponse.json();
       setCpiResults(results);
-      console.log("resultttt", results);
+      // console.log("resultttt", results);
       setSuccess("Percentages submitted and CPI calculated successfully!");
     } catch (err: any) {
       console.error("Error:", err);
       setError(err.message || "An error occurred");
     } finally {
       setLoading(false);
+      setLoadingGraph(false);
     }
   };
 
@@ -279,7 +281,7 @@ const PercentageModal: React.FC = () => {
           levels for each House, Council, and Committee, you can instantly see
           how these changes affect the distribution and concentration of voting
           power across the organization. <br />{" "}
-          <span className="font-extrabold">
+          <span className="font-bold tracking-wider">
             Dive in to understand how governance dynamics shift based on your
             inputs!
           </span>
@@ -305,7 +307,7 @@ const PercentageModal: React.FC = () => {
                       <IoInformationCircleOutline />
                     </div>
                     {activeTooltip === field && (
-                      <div className="absolute z-10 w-64 p-2 bg-[#222222] text-white text-xs rounded-lg shadow-lg left-4 top-6 border border-[#FEC5FB] opacity-70">
+                      <div className="absolute z-10 w-60 p-2 bg-[#222222] text-white text-xs rounded-lg shadow-lg left-[-10px] top-6 border border-[#FEC5FB] opacity-70">
                         {councilInfo[field as keyof typeof councilInfo]}
                       </div>
                     )}
@@ -318,9 +320,16 @@ const PercentageModal: React.FC = () => {
                     }}
                     className="w-full font-semibold p-4 bg-[#222222] rounded-lg outline-none border-none focus:ring-1 focus:ring-[#FEC5FB]"
                     value={councilPercentages[field] || ""}
-                    onChange={(e) =>
-                      handlePercentageChange(field, e.target.value)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Validate input with regex to allow up to two decimal places
+                      if (
+                        /^\d{0,3}(\.\d{0,2})?$/.test(value) &&
+                        Number(value) <= 100
+                      ) {
+                        handlePercentageChange(field, value);
+                      }
+                    }}
                     onKeyDown={(e) => handleKeyDown(e, index)}
                     onBlur={() => handleFocusOut(index)}
                     inputMode="decimal"
@@ -343,7 +352,7 @@ const PercentageModal: React.FC = () => {
             </p>
           ) : (
             <p className="text-xs text-center my-4 text-[#FEC5FB] mt-10">
-              Remaining Perecentages: {100 - totalPercentage}%
+              Remaining Perecentages: {(100 - totalPercentage).toFixed(2)}%
             </p>
           )}
           <button
@@ -353,7 +362,7 @@ const PercentageModal: React.FC = () => {
               isButtonDisabled ? "cursor-not-allowed opacity-50" : ""
             }`}
             disabled={isButtonDisabled || isSaving}
-            >
+          >
             {loading ? "Simulating..." : "Simulate"}
           </button>
 
@@ -365,10 +374,16 @@ const PercentageModal: React.FC = () => {
             <p className="text-red-500 mt-4 text-center mx-auto">{error}</p>
           )}
 
-          {(cpiResults.length > 0 || initialCPI.length > 0) && (
-            <div className="mt-8 w-[95%] mx-auto flex items-center justify-center">
-              <CPILineGraph cpiResults={cpiResults} initialCPI={initialCPI} />
+          {loadingGraph ? (
+            <div className="mt-8 w-[95%] mx-auto flex items-center justify-center bg-white text-black rounded-lg shadow-lg p-6 h-[550px]">
+              <div className="loader"></div>
             </div>
+          ) : (
+            (cpiResults.length > 0 || initialCPI.length > 0) && (
+              <div className="mt-8 w-[95%] mx-auto flex items-center justify-center">
+                <CPILineGraph cpiResults={cpiResults} initialCPI={initialCPI} />
+              </div>
+            )
           )}
         </form>
       </div>

@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Twitter from 'twitter-api-v2';
 
 export async function POST(request: NextRequest) {
-  console.log("beforeee")
+  // console.log("beforeee")
 
   try {
     const { media_data } = await request.json();
 
-    console.log(media_data);
+    // console.log(media_data);
 
     if (!media_data) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.log("heyaaaa")
+    // console.log("heyaaaa")
 
     const client = new Twitter({
       appKey: process.env.TWITTER_API_KEY!,
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       accessToken: process.env.TWITTER_ACCESS_TOKEN!,
       accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET!,
     });
-    console.log("heyaaaa", client)
+    // console.log("heyaaaa", client)
 
     // Upload media
     const mediaId = await client.v1.uploadMedia(
