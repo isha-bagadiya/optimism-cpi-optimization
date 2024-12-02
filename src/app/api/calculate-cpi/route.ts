@@ -23,22 +23,22 @@ const dateRanges: DateRange[] = [
   },
   {
     start_date: "2023-01-26",
-    end_date: "2023-06-07",
+    end_date: "2023-03-30",
     HCC: new Set(["th_vp", "ch_vp_r2", "gc_vp_s3"]),
   },
   {
-    start_date: "2023-06-08",
-    end_date: "2023-10-13",
-    HCC: new Set(["th_vp", "ch_vp_r2", "gc_vp_s4"]),
+    start_date: "2023-03-31",
+    end_date: "2023-06-07",
+    HCC: new Set(["th_vp", "ch_vp_r3", "gc_vp_s3"]),
   },
   {
-    start_date: "2023-10-14",
+    start_date: "2023-06-08",
     end_date: "2024-01-03",
     HCC: new Set(["th_vp", "ch_vp_r3", "gc_vp_s4"]),
   },
   {
     start_date: "2024-01-04",
-    end_date: "2024-06-02",
+    end_date: "2024-01-11",
     HCC: new Set([
       "th_vp",
       "ch_vp_r3",
@@ -50,7 +50,7 @@ const dateRanges: DateRange[] = [
     ]),
   },
   {
-    start_date: "2024-06-03",
+    start_date: "2024-01-12",
     end_date: "2024-06-26",
     HCC: new Set([
       "th_vp",
@@ -64,10 +64,49 @@ const dateRanges: DateRange[] = [
   },
   {
     start_date: "2024-06-27",
-    end_date: "2024-12-11",
+    end_date: "2024-07-16",
     HCC: new Set([
       "th_vp",
       "ch_vp_r4",
+      "gc_vp_s6",
+      "gc_vp_mm_s6",
+      "sc_vp_s6",
+      "coc_vp_s6",
+      "dab_vp_s6",
+    ]),
+  },
+  {
+    start_date: "2024-07-17",
+    end_date: "2024-10-21",
+    HCC: new Set([
+      "th_vp",
+      "ch_vp_r5",
+      "gc_vp_s6",
+      "gc_vp_mm_s6",
+      "sc_vp_s6",
+      "coc_vp_s6",
+      "dab_vp_s6",
+    ]),
+  },
+  {
+    start_date: "2024-10-22",
+    end_date: "2024-12-02",
+    HCC: new Set([
+      "th_vp",
+      "ch_vp_r6",
+      "gc_vp_s6",
+      "gc_vp_mm_s6",
+      "sc_vp_s6",
+      "coc_vp_s6",
+      "dab_vp_s6",
+    ]),
+  },
+  {
+    start_date: "2024-12-03",
+    end_date: "2024-12-11",
+    HCC: new Set([
+      "th_vp",
+      "ch_vp_r6",
       "gc_vp_s6",
       "gc_vp_mm_s6",
       "sc_vp_s6",
@@ -89,7 +128,7 @@ const councilMappings: CouncilMapping[] = [
   },
   {
     displayName: "Citizen House",
-    keys: ["ch_vp_r2", "ch_vp_r3", "ch_vp_r4"],
+    keys: ["ch_vp_r2", "ch_vp_r3", "ch_vp_r4", "ch_vp_r5", "ch_vp_r6"],
   },
   {
     displayName: "Grants Council",
@@ -115,64 +154,6 @@ const councilMappings: CouncilMapping[] = [
 
 let cachedClient: any = null;
 let cachedDb: any = null;
-
-// function calculateCPI(
-//   data: any[],
-//   percentages: CouncilPercentages,
-//   redistributedPercentages: Record<string, number>,
-//   activeCouncils: Set<string>
-// ): number {
-
-//   // First, validate the input data
-//   if (!data || data.length === 0) {
-//     return 0;
-//   }
-
-//   return data.reduce((sum, delegate) => {
-
-//     const getCouncilValue = (councilKeys: string[]): number => {
-//       const activeKey = councilKeys.find(key => activeCouncils.has(key));
-//       if (!activeKey) return 0;
-
-//       const value = delegate.voting_power[activeKey];
-//       // Ensure we're working with numbers
-//       return typeof value === 'number'
-//         ? value
-//         : typeof value === 'string'
-//           ? parseFloat(value)
-//           : typeof value?.toString === 'function'
-//             ? parseFloat(value.toString())
-//             : 0;
-//     };
-
-//     // Get percentage values, ensuring they are numbers
-//     const percentageValues = {
-//       tokenHouse: (redistributedPercentages["Token House"] || 0) / 100,
-//       citizenHouse: (redistributedPercentages["Citizen House"] || 0) / 100,
-//       grantsCouncil: (redistributedPercentages["Grants Council"] || 0) / 100,
-//       grantsMM: (redistributedPercentages["Grants Council (Milestone & Metrics Sub-committee)"] || 0) / 100,
-//       securityCouncil: (redistributedPercentages["Security Council"] || 0) / 100,
-//       coc: (redistributedPercentages["Code of Conduct Council"] || 0) / 100,
-//       dab: (redistributedPercentages["Developer Advisory Board"] || 0) / 100
-//     };
-
-//     const influence =
-//       parseFloat(delegate.voting_power.th_vp?.toString() || "0") *
-//       percentageValues.tokenHouse +
-//       getCouncilValue(["ch_vp_r2", "ch_vp_r3", "ch_vp_r4"]) *
-//       percentageValues.citizenHouse +
-//       getCouncilValue(["gc_vp_s3", "gc_vp_s4", "gc_vp_s5", "gc_vp_s6"]) *
-//       percentageValues.grantsCouncil +
-//       getCouncilValue(["gc_vp_mm_s5", "gc_vp_mm_s6"]) *
-//       percentageValues.grantsMM +
-//       getCouncilValue(["sc_vp_s5", "sc_vp_s6"]) *
-//       percentageValues.securityCouncil+
-//       getCouncilValue(["coc_vp_s5", "coc_vp_s6"]) * percentageValues.coc+
-//       getCouncilValue(["dab_vp_s5", "dab_vp_s6"]) * percentageValues.dab;
-
-//     return sum + Math.pow(influence, 2);
-//   }, 0);
-// }
 
 function calculateCPI(
   data: any[],
