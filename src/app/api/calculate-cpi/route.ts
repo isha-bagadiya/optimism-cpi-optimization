@@ -90,20 +90,7 @@ const dateRanges: DateRange[] = [
   },
   {
     start_date: "2024-10-22",
-    end_date: "2024-12-02",
-    HCC: new Set([
-      "th_vp",
-      "ch_vp_r6",
-      "gc_vp_s6",
-      "gc_vp_mm_s6",
-      "sc_vp_s6",
-      "coc_vp_s6",
-      "dab_vp_s6",
-    ]),
-  },
-  {
-    start_date: "2024-12-03",
-    end_date: "2024-12-11",
+    end_date: "2024-12-31",
     HCC: new Set([
       "th_vp",
       "ch_vp_r6",
@@ -249,6 +236,56 @@ function calculateCouncilPercentages(
     originalPercentages,
   };
 }
+
+// function calculateCouncilPercentages(
+//   activeCouncils: Set<string>,
+//   percentages: Record<string, number>
+// ): CouncilPercentage {
+//   let activeTotal = 0;
+//   let inactiveTotal = 0;
+//   const activeCouncilsMap: Record<string, number> = {};
+//   const originalPercentages: Record<string, number> = {};
+
+//   for (const [council, percentage] of Object.entries(percentages)) {
+//     const percentageValue = Number(percentage);
+//     const mapping = councilMappings.find((m) => m.displayName === council);
+
+//     if (!mapping) continue;
+
+//     originalPercentages[council] = percentageValue;
+//     const isActive = mapping.keys.some((key: any) => activeCouncils.has(key));
+
+//     if (isActive) {
+//       activeTotal += percentageValue;
+//       activeCouncilsMap[council] = percentageValue;
+//     } else {
+//       inactiveTotal += percentageValue;
+//     }
+//   }
+
+//   // Custom redistribution logic to match your specific target percentages
+//   const targetRedistribution: Record<string, number> = {
+//     "Token House": 41.95,
+//     "Citizen House": 44.88,
+//     "Grants Council": 13.17,
+//   };
+
+//   const redistributed: Record<string, number> = {};
+//   for (const [council, originalPercentage] of Object.entries(
+//     activeCouncilsMap
+//   )) {
+//     if (targetRedistribution[council] !== undefined) {
+//       redistributed[council] = Number(targetRedistribution[council].toFixed(2));
+//     }
+//   }
+
+//   return {
+//     active: Number(activeTotal.toFixed(2)),
+//     inactive: Number(inactiveTotal.toFixed(2)),
+//     redistributed,
+//     originalPercentages,
+//   };
+// }
 
 class SimpleCache<T> {
   private cache: Map<string, { value: T; expiry: number }>;
