@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Concentration of Power Index in DAOs",
+  title: "Optimism CPI Simulator",
   description:
     "Tracking and analyzing the distribution of influence within decentralized governance structures",
 };
