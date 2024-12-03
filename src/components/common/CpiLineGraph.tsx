@@ -272,28 +272,58 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
 
   // Event data
   const events: Event[] = [
-    {
-      name: "RPGF Round 3",
-      startDate: "2023-10-14",
-      endDate: "2024-01-11",
-      color: "rgba(255,0,0,0.7)",
-    },
+    // {
+    //   name: "RPGF Round 2",
+    //   startDate: "2022-05-26",
+    //   endDate: "2023-03-30",
+    //   color: "rgba(255,0,0,0.7)",
+    // },
+    // {
+    //   name: "RPGF Round 3",
+    //   startDate: "2023-03-31",
+    //   endDate: "2024-01-11",
+    //   color: "rgba(255,0,0,0.7)",
+    // },
     {
       name: "RPGF Round 4",
-      startDate: "2024-06-03",
-      endDate: "2024-01-11",
+      startDate: "2024-01-12",
+      endDate: "2024-07-16",
       color: "rgba(255,0,0,0.7)",
     },
+    {
+      name: "RPGF Round 5",
+      startDate: "2024-07-17",
+      endDate: "2024-10-21",
+      color: "rgba(255,0,0,0.7)",
+    },
+    {
+      name: "RPGF Round 6",
+      startDate: "2024-10-22",
+      endDate: "2024-12-31",
+      color: "rgba(255,0,0,0.7)",
+    },
+    // {
+    //   name: "Season 3",
+    //   startDate: "2023-01-26",
+    //   endDate: "2023-06-07",
+    //   color: "rgba(128,0,128,0.7)",
+    // },
+    // {
+    //   name: "Season 4",
+    //   startDate: "2023-06-08",
+    //   endDate: "2024-01-03",
+    //   color: "rgba(128,0,128,0.7)",
+    // },
     {
       name: "Season 5",
       startDate: "2024-01-04",
-      endDate: "0000-00-00",
+      endDate: "2024-06-26",
       color: "rgba(128,0,128,0.7)",
     },
     {
       name: "Season 6",
       startDate: "2024-06-27",
-      endDate: "0000-00-00",
+      endDate: "2024-12-31",
       color: "rgba(128,0,128,0.7)",
     },
   ];
