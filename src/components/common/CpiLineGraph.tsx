@@ -210,9 +210,10 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
       }
   
       const imageUrl = `https://files.lighthouse.storage/viewFile/${result.imageUrl}`;
-      const tweetText = encodeURIComponent('Check out this cpi calculation!')
-
-       const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(imageUrl)}`
+      const tweetText = encodeURIComponent(
+        `Here's my take on the Concentration of Power Index (CPI) in the Optimism Collective! I adjusted the influence of each HCC based on my understanding.\nCheck it out: ${imageUrl}\n\nYou have a better idea? Try it yourself and share your graph here: https://www.daocpi.com/`
+      );
+      const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
 
        window.open(twitterIntentUrl, '_blank')
     } catch (error) {
