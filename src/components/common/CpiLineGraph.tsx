@@ -211,8 +211,8 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
   
       const imageUrl = `https://files.lighthouse.storage/viewFile/${result.imageUrl}`;
       const tweetText = encodeURIComponent(
-        `Here's my take on the Concentration of Power Index (CPI) in the Optimism Collective! I adjusted each HCC's influence based on my understanding of Governance.\nCheck it out: ${imageUrl}\n\nThink you can do better? Try it and share your graph: https://www.daocpi.com/`
-      );
+        `Here's my take on the Concentration of Power Index (CPI) in the @Optimism Collective!\n\nI adjusted each HCC's influence based on my understanding of Governance.\n\nCheck it out: ${imageUrl}\n\nThink you can do better?\n\nTry it and share your graph: https://www.daocpi.com/`
+      ).trim();
       const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
 
        window.open(twitterIntentUrl, '_blank')
