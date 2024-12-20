@@ -94,7 +94,7 @@ const PercentageModal: React.FC = () => {
 
     const loadInitialCPI = async () => {
       try {
-        const response = await fetch("/csvjson.json");
+        const response = await fetch("/csv.json");
         const data: CPIData[] = await response.json();
         // Convert CPIData to CPIResult format
         const formattedData: CPIResult[] = data.map((item) => ({
