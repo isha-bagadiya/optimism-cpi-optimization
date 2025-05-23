@@ -1,10 +1,18 @@
 "use client";
 import { useContext, useEffect, useRef, useState } from "react";
-import CPILineGraph from "./CpiLineGraph";
+import dynamic from "next/dynamic";
 import sidebg from "../../../public/influencepagesideimage.svg";
 import Image from "next/image";
 import { IoInformationCircleOutline } from "react-icons/io5";
 import { SavingContext } from "./SavingContext";
+
+const CpiLineGraph = dynamic(
+  () => import("../common/CpiLineGraph"),
+  {
+    loading: () => <p>Loading Chart...</p>,
+    ssr: false,
+  }
+);
 
 const councilInfo = {
   "Token House":
@@ -381,7 +389,7 @@ const PercentageModal: React.FC = () => {
           ) : (
             (cpiResults.length > 0 || initialCPI.length > 0) && (
               <div className="mt-8 w-[95%] mx-auto flex items-center justify-center">
-                <CPILineGraph cpiResults={cpiResults} initialCPI={initialCPI} />
+                <CpiLineGraph cpiResults={cpiResults} initialCPI={initialCPI} />
               </div>
             )
           )}

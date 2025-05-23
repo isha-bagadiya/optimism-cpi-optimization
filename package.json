@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
     "@lighthouse-web3/sdk": "^0.3.7",
@@ -24,9 +25,11 @@
     "twitter-api-v2": "^1.18.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.3.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "cross-env": "^7.0.3",
     "eslint": "^8",
     "eslint-config-next": "15.0.2",
     "postcss": "^8",

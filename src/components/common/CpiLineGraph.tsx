@@ -10,14 +10,13 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
-  ChartData,
   TimeScale,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import annotationPlugin from "chartjs-plugin-annotation";
-import lighthouse from "@lighthouse-web3/sdk";
+// import lighthouse from "@lighthouse-web3/sdk";
 import { BsTwitterX, BsShare, BsDownload } from "react-icons/bs";
-import html2canvas from "html2canvas";
+// import html2canvas from "html2canvas";
 import { SavingContext } from "./SavingContext";
 
 ChartJS.register(
@@ -39,13 +38,9 @@ interface Event {
   color: string;
 }
 
-interface Annotation {
-  [key: string]: any;
-}
-
 interface UploadResponse {
   success: boolean;
-  imageUrl?: any;
+  imageUrl?: string;
   error?: string;
   status?: any; // Add specific types based on lighthouse response
 }
@@ -78,25 +73,6 @@ type CPILineGraphProps = {
   cpiResults: CPIResult[];
   initialCPI: CPIResult[];
 };
-
-interface TwitterMediaUploadResponse {
-  media_id_string: string;
-  media_id: number;
-  size: number;
-  expires_after_secs: number;
-  image: {
-    image_type: string;
-    w: number;
-    h: number;
-  };
-}
-
-interface TwitterConfig {
-  apiKey: string;
-  apiSecret: string;
-  accessToken: string;
-  accessTokenSecret: string;
-}
 
 const HISTORICAL_PERCENTAGES: CouncilPercentages[] = [
   {
@@ -135,6 +111,7 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
   const getChartImage = async (): Promise<string | null> => {
     if (chartContainerRef.current) {
       try {
+        const html2canvas = (await import("html2canvas")).default;
         const canvas = await html2canvas(chartContainerRef.current, {
           backgroundColor: "white",
           scale: 2, // Increase quality
@@ -167,6 +144,7 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
   // Function to upload chart image to Lighthouse
   const uploadChartToLighthouse = async (): Promise<UploadResponse> => {
     try {
+      const lighthouse = (await import("@lighthouse-web3/sdk")).default;
       // Get the chart image
       const chartImage = await getChartImage();
 
