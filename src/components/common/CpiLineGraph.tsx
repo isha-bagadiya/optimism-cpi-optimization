@@ -14,8 +14,10 @@ import {
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import annotationPlugin from "chartjs-plugin-annotation";
+import zoomPlugin from "chartjs-plugin-zoom";
 // import lighthouse from "@lighthouse-web3/sdk";
-import { BsTwitterX, BsShare, BsDownload } from "react-icons/bs";
+import { BsTwitterX, BsShare, BsDownload, BsZoomIn } from "react-icons/bs";
+import { FaSearchPlus, FaSearchMinus, FaExpandArrowsAlt } from "react-icons/fa";
 // import html2canvas from "html2canvas";
 import { SavingContext } from "./SavingContext";
 
@@ -28,7 +30,8 @@ ChartJS.register(
   Tooltip,
   Legend,
   annotationPlugin,
-  TimeScale
+  TimeScale,
+  zoomPlugin
 );
 
 interface Event {
@@ -186,14 +189,14 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
       if (!result.success || !result.imageUrl) {
         throw new Error("Failed to upload chart image to Lighthouse");
       }
-  
+
       const imageUrl = `https://files.lighthouse.storage/viewFile/${result.imageUrl}`;
       const tweetText = encodeURIComponent(
         `Here's my take on the Concentration of Power Index (CPI) in the @Optimism Collective!\n\nI adjusted each HCC's influence based on my understanding of Governance.\n\nCheck it out: ${imageUrl}\n\nThink you can do better?\n\nTry it and share your graph: https://www.daocpi.com/`
       ).trim();
       const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
 
-       window.open(twitterIntentUrl, '_blank')
+      window.open(twitterIntentUrl, "_blank");
     } catch (error) {
       console.error("Error sharing to Twitter:", error);
       alert("Failed to share to Twitter. Please try again.");
@@ -251,18 +254,6 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
 
   // Event data
   const events: Event[] = [
-    // {
-    //   name: "RPGF Round 2",
-    //   startDate: "2022-05-26",
-    //   endDate: "2023-03-30",
-    //   color: "rgba(255,0,0,0.7)",
-    // },
-    // {
-    //   name: "RPGF Round 3",
-    //   startDate: "2023-03-31",
-    //   endDate: "2024-01-11",
-    //   color: "rgba(255,0,0,0.7)",
-    // },
     {
       name: "RPGF Round 4",
       startDate: "2024-01-12",
@@ -281,18 +272,6 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
       endDate: "2024-12-31",
       color: "rgba(255,0,0,0.7)",
     },
-    // {
-    //   name: "Season 3",
-    //   startDate: "2023-01-26",
-    //   endDate: "2023-06-07",
-    //   color: "rgba(128,0,128,0.7)",
-    // },
-    // {
-    //   name: "Season 4",
-    //   startDate: "2023-06-08",
-    //   endDate: "2024-01-03",
-    //   color: "rgba(128,0,128,0.7)",
-    // },
     {
       name: "Season 5",
       startDate: "2024-01-04",
@@ -441,6 +420,28 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
     ],
   };
 
+  // Define animation variables here
+  const totalDuration = 10000;
+  // Calculate delay dynamically based on the actual number of data points
+  const numberOfPoints = data.datasets.reduce((sum, dataset) => sum + dataset.data.length, 0);
+  const delayBetweenPoints = totalDuration / numberOfPoints;
+
+  const previousY = (context: any) => {
+    const dataIndex = context.dataIndex;
+    const datasetIndex = context.datasetIndex;
+    const chart = context.chart;
+
+    if (dataIndex > 0) {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      // Safely check if the previous data point exists
+      if (meta.data[dataIndex - 1]) {
+        return meta.data[dataIndex - 1].getProps(["y"], true).y;
+      }
+    }
+    // Fallback to the minimum of the y-scale for the first point or if previous point is somehow unavailable
+    return chart.scales.y.getPixelForValue(chart.scales.y.min);
+  };
+
   const options: ChartOptions<"line"> = {
     plugins: {
       legend: {
@@ -537,6 +538,30 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
           },
         },
       },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: "x",
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+            speed: 0.1,
+          },
+          pinch: {
+            // For touch devices
+            enabled: true,
+          },
+          mode: "x", // Zoom only on the x-axis
+        },
+        limits: {
+          // Optional: limit the zoom/pan range
+          x: {
+            min: new Date("2023-08-01T00:00:00Z").valueOf(),
+            max: new Date("2024-11-30T23:59:59Z").valueOf(),
+          },
+        },
+      },
     },
     scales: {
       x: {
@@ -577,9 +602,50 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
       intersect: false,
     },
     animation: {
-      duration: 1000,
-      easing: "easeInOutQuart",
-    },
+      x: {
+        type: "number",
+        easing: "linear",
+        duration: delayBetweenPoints,
+        from: NaN, // the point is initially skipped
+        delay(context: any) {
+          if (context.type !== "data" || (context.xStarted as boolean)) { // Add type assertion
+            return 0;
+          }
+          (context.xStarted as boolean) = true; // Add type assertion
+          return context.dataIndex * delayBetweenPoints;
+        },
+      } as any, // Assert x property as any
+      y: {
+        type: "number",
+        easing: "linear",
+        duration: delayBetweenPoints,
+        from: previousY,
+        delay(context: any) {
+          if (context.type !== "data" || (context.yStarted as boolean)) { // Add type assertion
+            return 0;
+          }
+          (context.yStarted as boolean) = true; // Add type assertion
+          return context.dataIndex * delayBetweenPoints;
+        },
+      } as any, // Assert y property as any
+    } as any, // Assert the entire animation object as any
+  };
+
+  const handleResetZoom = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (chartRef.current) {
+      chartRef.current.resetZoom();
+    }
+  };
+
+  const handleZoomIn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    chartRef.current?.zoom(1.1); // Zoom in by 10%
+  };
+
+  const handleZoomOut = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    chartRef.current?.zoom(0.9); // Zoom out by 10%
   };
 
   return (
@@ -605,6 +671,28 @@ const CPILineGraph: React.FC<CPILineGraphProps> = ({
           title="Share"
         >
           <BsShare size={20} className="text-gray-700" />
+        </button>
+
+        <button
+          onClick={handleZoomIn}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Zoom In"
+        >
+          <FaSearchPlus size={18} className="text-gray-700" />
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Zoom Out"
+        >
+          <FaSearchMinus size={18} className="text-gray-700" />
+        </button>
+        <button
+          onClick={handleResetZoom}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Reset Zoom"
+        >
+          <FaExpandArrowsAlt size={18} className="text-gray-700" />
         </button>
       </div>
 
